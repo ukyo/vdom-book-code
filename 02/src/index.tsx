@@ -1,4 +1,4 @@
-import { ActionType, ActionsType, View, h, app } from "./lib/hyperapp";
+import { ActionsType, View, h, app } from "./lib/hyperapp";
 
 let id = 0;
 
@@ -34,7 +34,7 @@ const actions: ActionsType<MessageAppState, MessageAppActions> = {
       messages: [message, ...state.messages],
     };
   },
-  removeMessage: (id: string) => state => ({
+  removeMessage: id => state => ({
     ...state,
     messages: state.messages.filter(m => m.id !== id),
   }),
