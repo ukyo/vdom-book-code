@@ -18,4 +18,4 @@ $ yarn serve
 
 devtools の Sources タブからデバッグできます。
 
-![screenshot][./screenshot.png]
+![screenshot](./screenshot.png)
