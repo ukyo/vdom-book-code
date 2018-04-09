@@ -295,7 +295,7 @@ export function app(state, actions, view, container) {
   // 差分更新のキモ
   function patch(parent, element, oldNode, node, isSvg) {
     // 古いvnodeと新しいvnodeの比較
-    if (node === oldNode) {同じなら何もしない
+    if (node === oldNode) { // 同じなら何もしない
     } else if (oldNode == null || oldNode.nodeName !== node.nodeName) { //oldNodeがnull　or 別要素
       var newElement = createElement(node, isSvg)
       parent.insertBefore(newElement, element)
