@@ -3,7 +3,7 @@
     "target": "esnext",
     "module": "commonjs",
     "jsx": "react",
-    "jsxFactory": "createElement",
+    "jsxFactory": "h",
     "noImplicitAny": false,
     "outDir": "dist",
     "rootDir": "src"

@@ -1,75 +1,76 @@
-import { ActionsType, View, h, app } from "./lib/hyperapp";
+import { h } from "./h";
+import { createRenderer } from "./renderer";
 
+const render = createRenderer(document.getElementById("container"));
+
+let newMessage = "";
+let messages = [];
 let id = 0;
+let enabled = true;
 
-interface MessageAppState {
-  newMessage: string;
-  messages: { id: string; text: string }[];
+function addNewMessage(ev: KeyboardEvent) {
+  const el = ev.target as HTMLInputElement;
+  if (ev.keyCode !== 13 || !el.value) return;
+  messages.push({
+    id: id++,
+    text: newMessage,
+  });
+  el.value = newMessage = "";
+  render(<App />);
 }
 
-interface MessageAppActions {
-  updateNewMessage(ev: KeyboardEvent): MessageAppState;
-  addMessage(ev: KeyboardEvent): MessageAppState;
-  removeMessage(id: string): MessageAppState;
-  reverseMessages(): MessageAppState;
+function updateNewMessage(ev: KeyboardEvent) {
+  newMessage = (ev.target as HTMLInputElement).value;
+  render(<App />);
 }
 
-const state: MessageAppState = {
-  newMessage: "",
-  messages: [],
-};
+function reverseMessages() {
+  messages.reverse();
+  render(<App />);
+}
 
-const actions: ActionsType<MessageAppState, MessageAppActions> = {
-  updateNewMessage: ev => state => ({ ...state, newMessage: ev.target.value }),
-  addMessage: ev => state => {
-    if (ev.keyCode !== 13 || !ev.target.value) return state;
-    const message = {
-      id: String(id++),
-      text: state.newMessage,
-    };
-    ev.target.value = "";
-    return {
-      ...state,
-      newMessage: "",
-      messages: [message, ...state.messages],
-    };
-  },
-  removeMessage: id => state => ({
-    ...state,
-    messages: state.messages.filter(m => m.id !== id),
-  }),
-  reverseMessages: () => state => ({
-    ...state,
-    messages: state.messages.reverse(),
-  }),
-};
+function removeMessage(id: number) {
+  messages = messages.filter(m => m.id !== id);
+  render(<App />);
+}
 
-const view: View<MessageAppState, MessageAppActions> = (state, actions) => (
-  <div>
+function toggleEnabled() {
+  enabled = !enabled;
+  render(<App />);
+}
+
+function hello() {
+  console.log("hello");
+}
+
+const App = () => (
+  <div style="color: #999;">
     <div>
       <input
         type="text"
-        onkeypress={actions.addMessage}
-        oninput={actions.updateNewMessage}
+        onkeypress={addNewMessage}
+        oninput={updateNewMessage}
       />
     </div>
-    <div>
-      <button onclick={actions.reverseMessages}>reverse</button>
+    <div onupdate={hello}>
+      <button onclick={reverseMessages}>reverse</button>
+      <button onclick={toggleEnabled}>toggle enabled</button>
     </div>
     <div>
-      {state.messages.map(m => (
-        <div key={m.id}>
-          <span>{m.text}</span>
-          <button onclick={() => actions.removeMessage(m.id)}>×</button>
+      {enabled && (
+        <div>
+          {messages.map(m => (
+            <div key={m.id}>
+              <span>{m.text}</span>
+              <button onclick={() => removeMessage(m.id)}>×</button>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   </div>
 );
 
-const messageApp = app(
-  state,
-  actions,
-  view,
-  document.getElementById("container")
-);
+render(<App />);
+
+// App();

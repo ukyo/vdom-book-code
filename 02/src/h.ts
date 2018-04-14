@@ -1,0 +1,45 @@
+export type Attrs = { [key: string]: any };
+
+export interface Props {
+  attrs: Attrs;
+  children: VNode[];
+}
+
+export type VNodeType = "component" | "element" | "text";
+
+export interface VNode {
+  type: VNodeType;
+  name: string | Component;
+  props: Props;
+}
+
+export type NestedChild = VNode | string | any[];
+export type Component = (props: Props) => VNode;
+
+function normalize(children: NestedChild[]): VNode[] {
+  const arr = [];
+  children.forEach(c => {
+    if (c == null || typeof c === "boolean") return;
+    if (Array.isArray(c)) {
+      arr.push(...normalize(c));
+    } else if (typeof c === "string" || typeof c === "number") {
+      arr.push({ type: "text", name: c });
+    } else {
+      arr.push(c);
+    }
+  });
+  return arr;
+}
+
+export function h(
+  name: string | Component,
+  attrs: Attrs,
+  ...children: NestedChild[]
+): VNode {
+  const props = { attrs: attrs || {}, children: normalize(children) };
+  return {
+    type: typeof name === "function" ? "component" : "element",
+    name,
+    props,
+  };
+}

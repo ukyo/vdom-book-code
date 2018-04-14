@@ -1,4 +1,4 @@
-import { createElement } from "./createElement";
+import { h } from "./h";
 
 console.log(
   JSON.stringify(
