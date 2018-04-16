@@ -2,12 +2,18 @@ import { VNode, Component, VNodeType } from "./h";
 
 let nextUnitOfWork = null;
 const queue: Fiber[] = [];
+let effects: Fiber[];
 
 enum FiberEffectTag {
   NoWork = 0,
   Placement = 1,
   Update = 2,
   Deletion = 4,
+}
+
+enum RenderPriority {
+  High,
+  Row,
 }
 
 type FiberTag = VNodeType | "root";
@@ -95,6 +101,8 @@ function completeWork(fiber: Fiber) {
       ...thisEffects,
       ...childEffects,
     ];
+  } else {
+    effects = fiber.effects;
   }
 }
 
@@ -126,8 +134,10 @@ function setAttr(el: Element, k: string, attr: any) {
   }
 }
 
-function commitAll(effects: Fiber[]) {
-  effects.forEach(e => {
+function commitAll() {
+  const _effects = effects;
+  effects = null;
+  _effects.forEach(e => {
     switch (e.effectTag) {
       case FiberEffectTag.Placement: {
         let node: Node;
@@ -173,20 +183,38 @@ function commitAll(effects: Fiber[]) {
   });
 }
 
+let isRunning = false;
 function workLoop() {
-  const currentRoot = root;
-  nextUnitOfWork = currentRoot;
+  if (isRunning) return;
+  isRunning = true;
   const cb = deadline => {
-    while (nextUnitOfWork !== null && deadline.timeRemaining() > 5) {
+    if (!nextUnitOfWork) {
+      const nextRoot = queue.shift();
+      if (prevRoot && nextRoot) {
+        nextRoot.alternate = prevRoot;
+        nextRoot.node = prevRoot.node;
+        nextRoot.child.alternate = prevRoot.child;
+        nextRoot.child.node = prevRoot.child.node;
+      }
+      nextUnitOfWork = prevRoot = nextRoot;
+    }
+
+    while (nextUnitOfWork !== null && deadline.timeRemaining() > 0) {
       nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     }
 
     if (nextUnitOfWork) {
       window.requestIdleCallback(cb);
     } else {
-      commitAll(currentRoot.effects);
+      commitAll();
+      if (queue.length) {
+        window.requestIdleCallback(cb);
+      } else {
+        isRunning = false;
+      }
     }
   };
+  // cb(null);
   window.requestIdleCallback(cb);
 }
 
@@ -223,19 +251,29 @@ function patch(workInProgress: Fiber) {
   return (workInProgress.child = first);
 }
 
-let root: Fiber = null;
+let prevRoot: Fiber = null;
 
 function createRootFiber(vnode: VNode, container: Element) {
-  root = cloneFiber(root, null);
-  const child = root.alternate ? root.alternate.child : null;
-  const fiber = cloneFiber(child, vnode);
-  root.child = fiber;
-  fiber.return = root;
-  root.node = container;
-  return root;
+  const nextRoot = createFiber(null);
+  nextRoot.child = createFiber(vnode);
+  nextRoot.child.return = nextRoot;
+  nextRoot.node = container;
+  return nextRoot;
 }
 
-export function render(vnode: VNode, container: Element) {
-  createRootFiber(vnode, container);
+export function render(
+  vnode: VNode,
+  container: Element,
+  priority: RenderPriority = RenderPriority.Row
+) {
+  const root = createRootFiber(vnode, container);
+  switch (priority) {
+    case RenderPriority.High:
+      queue.unshift(root);
+      break;
+    case RenderPriority.Row:
+      queue.push(root);
+      break;
+  }
   workLoop();
 }
