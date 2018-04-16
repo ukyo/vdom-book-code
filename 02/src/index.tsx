@@ -1,5 +1,5 @@
 import { h } from "./h";
-import { createRenderer } from "./renderer";
+import { createRenderer } from "./simple-renderer";
 
 const render = createRenderer(document.getElementById("container"));
 

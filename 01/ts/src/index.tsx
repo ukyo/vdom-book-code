@@ -1,10 +1,11 @@
 import { h } from "./h";
 
+const Foo = () => <div>foo</div>;
+
 console.log(
   JSON.stringify(
     <section bar="bar">
-      <h1>title</h1>
-      <p>hello</p>
+      <Foo />
     </section>,
     null,
     2

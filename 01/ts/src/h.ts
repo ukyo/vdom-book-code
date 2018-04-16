@@ -2,31 +2,41 @@ export type Attrs = { [key: string]: any };
 
 export interface Props {
   attrs: Attrs;
-  children: Child[];
+  children: VNode[];
 }
+
+export type VNodeType = "element" | "text";
 
 export interface VNode {
+  type: VNodeType;
   name: string;
-  props: Props;
+  props?: Props;
 }
 
-export type Child = VNode | any[];
-export type NestedChild = VNode | string | any[];
 export type Component = (props: Props) => VNode;
 
-function flatten(children: NestedChild[]): Child[] {
+function normalize(children: any[]): VNode[] {
   const arr = [];
-  children.forEach(
-    c => (Array.isArray(c) ? arr.push(...flatten(c)) : arr.push(c))
-  );
+  children.forEach(c => {
+    if (c == null || typeof c === "boolean") return;
+    if (Array.isArray(c)) {
+      arr.push(...normalize(c));
+    } else if (typeof c === "string" || typeof c === "number") {
+      arr.push({ type: "text", name: c });
+    } else {
+      arr.push(c);
+    }
+  });
   return arr;
 }
 
 export function h(
   name: string | Component,
   attrs: Attrs,
-  ...children: NestedChild[]
+  ...children: any[]
 ): VNode {
-  const props = { attrs, children: flatten(children) };
-  return typeof name === "function" ? name(props) : { name, props };
+  const props = { attrs: attrs || {}, children: normalize(children) };
+  return typeof name === "function"
+    ? name(props)
+    : { type: "element", name, props };
 }

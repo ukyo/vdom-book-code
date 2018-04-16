@@ -13,10 +13,9 @@ export interface VNode {
   props: Props;
 }
 
-export type NestedChild = VNode | string | any[];
 export type Component = (props: Props) => VNode;
 
-function normalize(children: NestedChild[]): VNode[] {
+function normalize(children: any[]): VNode[] {
   const arr = [];
   children.forEach(c => {
     if (c == null || typeof c === "boolean") return;
@@ -34,7 +33,7 @@ function normalize(children: NestedChild[]): VNode[] {
 export function h(
   name: string | Component,
   attrs: Attrs,
-  ...children: NestedChild[]
+  ...children: any[]
 ): VNode {
   const props = { attrs: attrs || {}, children: normalize(children) };
   return {
