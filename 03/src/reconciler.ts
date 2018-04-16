@@ -11,11 +11,6 @@ enum FiberEffectTag {
   Deletion = 4,
 }
 
-enum RenderPriority {
-  High,
-  Row,
-}
-
 type FiberTag = VNodeType | "root";
 
 interface Fiber {
@@ -261,19 +256,7 @@ function createRootFiber(vnode: VNode, container: Element) {
   return nextRoot;
 }
 
-export function render(
-  vnode: VNode,
-  container: Element,
-  priority: RenderPriority = RenderPriority.Row
-) {
-  const root = createRootFiber(vnode, container);
-  switch (priority) {
-    case RenderPriority.High:
-      queue.unshift(root);
-      break;
-    case RenderPriority.Row:
-      queue.push(root);
-      break;
-  }
+export function render(vnode: VNode, container: Element) {
+  queue.push(createRootFiber(vnode, container));
   workLoop();
 }

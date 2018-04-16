@@ -61,4 +61,30 @@ const App = () => (
   </div>
 );
 
-render(<App />, container);
+const arr = [];
+for (let i = 0; i < 3000; ++i) {
+  arr.push(i);
+}
+
+let text = "";
+const updateText = (ev: KeyboardEvent) => {
+  text = (ev.target as HTMLInputElement).value;
+  render(<Hoge />, container);
+};
+
+const Hoge = () => (
+  <div>
+    <div>
+      <input oninput={updateText} />
+      {text}
+    </div>
+    {arr.map(i => <div>{i}</div>)}
+  </div>
+);
+
+setInterval(() => {
+  arr.push(arr.shift());
+  render(<Hoge />, container);
+}, 100);
+
+// render(<App />, container);
