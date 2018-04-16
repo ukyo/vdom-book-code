@@ -1,7 +1,8 @@
 import { VNode, Component, VNodeType } from "./h";
 
+export function createRenderer(container: Element) {}
+
 let nextUnitOfWork = null;
-const queue: Fiber[] = [];
 let effects: Fiber[];
 
 enum FiberEffectTag {
@@ -76,7 +77,7 @@ function updateNode(workInProgress: Fiber) {
       }
     }
   }
-  return workInProgress.vnode.type === "element" ? patch(workInProgress) : null;
+  return workInProgress.tag === "element" ? patch(workInProgress) : null;
 }
 
 function beginWork(workInProgress: Fiber): Fiber | null {
@@ -184,7 +185,6 @@ function workLoop() {
   isRunning = true;
   const cb = deadline => {
     if (!nextUnitOfWork) {
-      const nextRoot = queue.shift();
       if (prevRoot && nextRoot) {
         nextRoot.alternate = prevRoot;
         nextRoot.node = prevRoot.node;
@@ -192,6 +192,7 @@ function workLoop() {
         nextRoot.child.node = prevRoot.child.node;
       }
       nextUnitOfWork = prevRoot = nextRoot;
+      nextRoot = null;
     }
 
     while (nextUnitOfWork !== null && deadline.timeRemaining() > 0) {
@@ -202,7 +203,7 @@ function workLoop() {
       window.requestIdleCallback(cb);
     } else {
       commitAll();
-      if (queue.length) {
+      if (nextRoot) {
         window.requestIdleCallback(cb);
       } else {
         isRunning = false;
@@ -247,16 +248,17 @@ function patch(workInProgress: Fiber) {
 }
 
 let prevRoot: Fiber = null;
+let nextRoot: Fiber = null;
 
 function createRootFiber(vnode: VNode, container: Element) {
-  const nextRoot = createFiber(null);
-  nextRoot.child = createFiber(vnode);
-  nextRoot.child.return = nextRoot;
-  nextRoot.node = container;
-  return nextRoot;
+  const rootFiber = createFiber(null);
+  rootFiber.child = createFiber(vnode);
+  rootFiber.child.return = rootFiber;
+  rootFiber.node = container;
+  return rootFiber;
 }
 
 export function render(vnode: VNode, container: Element) {
-  queue.push(createRootFiber(vnode, container));
+  nextRoot = createRootFiber(vnode, container);
   workLoop();
 }
