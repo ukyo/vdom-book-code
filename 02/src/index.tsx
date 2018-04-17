@@ -17,34 +17,34 @@ function addNewMessage(ev: KeyboardEvent) {
     text: newMessage,
   });
   el.value = newMessage = "";
-  render(<App />);
+  render(<MessageApp />);
 }
 
 function updateNewMessage(ev: KeyboardEvent) {
   newMessage = (ev.target as HTMLInputElement).value;
-  render(<App />);
+  render(<MessageApp />);
 }
 
 function reverseMessages() {
   messages.reverse();
-  render(<App />);
+  render(<MessageApp />);
 }
 
 function removeMessage(id: number) {
   messages = messages.filter(m => m.id !== id);
-  render(<App />);
+  render(<MessageApp />);
 }
 
 function toggleEnabled() {
   enabled = !enabled;
-  render(<App />);
+  render(<MessageApp />);
 }
 
 function hello() {
   console.log("hello");
 }
 
-const App = () => (
+const MessageApp = () => (
   <div style="color: #999;">
     <div>
       <input
@@ -72,6 +72,6 @@ const App = () => (
   </div>
 );
 
-render(<App />);
+render(<MessageApp />);
 
 // App();
