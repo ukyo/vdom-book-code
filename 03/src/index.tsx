@@ -61,30 +61,30 @@ const App = () => (
   </div>
 );
 
-render(<App />);
+// render(<App />);
 
-// const arr = [];
-// for (let i = 0; i < 3000; ++i) {
-//   arr.push(i);
-// }
+const arr = [];
+for (let i = 0; i < 3000; ++i) {
+  arr.push(i);
+}
 
-// let text = "";
-// const updateText = (ev: KeyboardEvent) => {
-//   text = (ev.target as HTMLInputElement).value;
-//   render(<HeavyComponent />);
-// };
+let text = "";
+const updateText = (ev: KeyboardEvent) => {
+  text = (ev.target as HTMLInputElement).value;
+  render(<HeavyComponent />);
+};
 
-// const HeavyComponent = () => (
-//   <div>
-//     <div>
-//       <input oninput={updateText} />
-//       {text}
-//     </div>
-//     {arr.map(i => <div>{i}</div>)}
-//   </div>
-// );
+const HeavyComponent = () => (
+  <div>
+    <div>
+      <input oninput={updateText} />
+      {text}
+    </div>
+    {arr.map(i => <div>{i}</div>)}
+  </div>
+);
 
-// setInterval(() => {
-//   arr.push(arr.shift());
-//   render(<HeavyComponent />);
-// }, 100);
+setInterval(() => {
+  arr.push(arr.shift());
+  render(<HeavyComponent />);
+}, 100);

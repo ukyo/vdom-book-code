@@ -1,4 +1,5 @@
 import { VNode, Component, VNodeType } from "./h";
+import { LinkedList } from "./linkedlist";
 
 enum FiberEffectTag {
   NoWork = 0,
@@ -8,6 +9,7 @@ enum FiberEffectTag {
 }
 
 type FiberTag = VNodeType | "root";
+type EffectList = LinkedList<Fiber>;
 
 interface Fiber {
   tag: FiberTag;
@@ -18,7 +20,7 @@ interface Fiber {
   sibling?: Fiber;
   alternate?: Fiber;
   effectTag: FiberEffectTag;
-  effects: Fiber[];
+  effects: EffectList;
 }
 
 function createFiber(vnode: VNode): Fiber {
@@ -31,7 +33,7 @@ function createFiber(vnode: VNode): Fiber {
     sibling: null,
     alternate: null,
     effectTag: FiberEffectTag.NoWork,
-    effects: [],
+    effects: new LinkedList<Fiber>(),
   };
 }
 
@@ -46,7 +48,7 @@ function cloneFiber(current: Fiber, vnode: VNode) {
     child: null,
     sibling: null,
     effectTag: FiberEffectTag.NoWork,
-    effects: [],
+    effects: new LinkedList<Fiber>(),
   };
   current.alternate = fiber;
   return fiber;
@@ -134,16 +136,16 @@ function resolveComponent(fiber: Fiber) {
   fiber.tag = vnode.type;
 }
 
-function commitAllBeforeMutationLifeCycles(effects: Fiber[]) {
-  effects.forEach(e => {
+function commitAllBeforeMutationLifeCycles(effects: EffectList) {
+  for (const e of effects) {
     if (e.effectTag === FiberEffectTag.Deletion) {
       removeChilden(e);
     }
-  });
+  }
 }
 
-function commitAllHostEffects(effects: Fiber[]) {
-  effects.forEach(e => {
+function commitAllHostEffects(effects: EffectList) {
+  for (const e of effects) {
     switch (e.effectTag) {
       case FiberEffectTag.Placement: {
         let node: Node;
@@ -186,11 +188,11 @@ function commitAllHostEffects(effects: Fiber[]) {
         parent && parent.removeChild(node);
       }
     }
-  });
+  }
 }
 
-function commitAllLifeCycles(effects: Fiber[]) {
-  effects.forEach(e => {
+function commitAllLifeCycles(effects: EffectList) {
+  for (const e of effects) {
     if (e.tag !== "element") return;
     switch (e.effectTag) {
       case FiberEffectTag.Placement: {
@@ -200,12 +202,12 @@ function commitAllLifeCycles(effects: Fiber[]) {
         e.vnode.props.attrs.onupdate && e.vnode.props.attrs.onupdate(e.node);
       }
     }
-  });
+  }
 }
 
 export function createRenderer(container: Element) {
   let nextUnitOfWork = null;
-  let effects: Fiber[];
+  let effects: EffectList;
   let isRunning = false;
   let prevRoot: Fiber = null;
   let nextRoot: Fiber = null;
@@ -273,13 +275,9 @@ export function createRenderer(container: Element) {
 
   function completeWork(workInProgress: Fiber) {
     if (workInProgress.return) {
-      const childEffects = workInProgress.effects;
-      const thisEffects = workInProgress.effectTag ? [workInProgress] : [];
-      workInProgress.return.effects = [
-        ...workInProgress.return.effects,
-        ...thisEffects,
-        ...childEffects,
-      ];
+      workInProgress.effectTag &&
+        workInProgress.return.effects.push(workInProgress);
+      workInProgress.return.effects.concat(workInProgress.effects);
     } else {
       effects = workInProgress.effects;
     }
