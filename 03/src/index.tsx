@@ -1,11 +1,11 @@
 import { h } from "./h";
-import { render } from "./reconciler";
+import { createRenderer } from "./renderer";
 
 let messages = [];
 let id = 0;
 let enabled = true;
 
-const container = document.getElementById("container");
+const render = createRenderer(document.getElementById("container"));
 
 function addNewMessage(ev: KeyboardEvent) {
   const el = ev.target as HTMLInputElement;
@@ -15,22 +15,22 @@ function addNewMessage(ev: KeyboardEvent) {
     text: el.value,
   });
   el.value = "";
-  render(<App />, container);
+  render(<App />);
 }
 
 function reverseMessages() {
   messages.reverse();
-  render(<App />, container);
+  render(<App />);
 }
 
 function removeMessage(id: number) {
   messages = messages.filter(m => m.id !== id);
-  render(<App />, container);
+  render(<App />);
 }
 
 function toggleEnabled() {
   enabled = !enabled;
-  render(<App />, container);
+  render(<App />);
 }
 
 function hello() {
@@ -48,7 +48,7 @@ const App = () => (
     </div>
     <div>
       {enabled && (
-        <div>
+        <div onremove={hello}>
           {messages.map(m => (
             <div key={m.id}>
               <span>{m.text}</span>
@@ -61,30 +61,30 @@ const App = () => (
   </div>
 );
 
-const arr = [];
-for (let i = 0; i < 3000; ++i) {
-  arr.push(i);
-}
+render(<App />);
 
-let text = "";
-const updateText = (ev: KeyboardEvent) => {
-  text = (ev.target as HTMLInputElement).value;
-  render(<Hoge />, container);
-};
+// const arr = [];
+// for (let i = 0; i < 3000; ++i) {
+//   arr.push(i);
+// }
 
-const Hoge = () => (
-  <div>
-    <div>
-      <input oninput={updateText} />
-      {text}
-    </div>
-    {arr.map(i => <div>{i}</div>)}
-  </div>
-);
+// let text = "";
+// const updateText = (ev: KeyboardEvent) => {
+//   text = (ev.target as HTMLInputElement).value;
+//   render(<HeavyComponent />);
+// };
 
-setInterval(() => {
-  arr.push(arr.shift());
-  render(<Hoge />, container);
-}, 100);
+// const HeavyComponent = () => (
+//   <div>
+//     <div>
+//       <input oninput={updateText} />
+//       {text}
+//     </div>
+//     {arr.map(i => <div>{i}</div>)}
+//   </div>
+// );
 
-// render(<App />, container);
+// setInterval(() => {
+//   arr.push(arr.shift());
+//   render(<HeavyComponent />);
+// }, 100);
