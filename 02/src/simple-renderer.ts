@@ -24,9 +24,7 @@ export function createRenderer(container: Element) {
       case "element": {
         const node = document.createElement(vnode.name as string);
         const { attrs, children } = vnode.props;
-        for (const k in attrs) {
-          setAttr(node, k, attrs[k]);
-        }
+        updateAttrs(node, {}, attrs);
         setNode(vnode, node);
         children.forEach(child => node.appendChild(createElement(child)));
         attrs.oncreate && lifeCycles.push(() => attrs.oncreate(node));

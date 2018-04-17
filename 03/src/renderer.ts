@@ -1,4 +1,4 @@
-import { VNode, Component, VNodeType } from "./h";
+import { VNode, Component, VNodeType, Attrs } from "./h";
 import { LinkedList } from "./linkedlist";
 
 enum FiberEffectTag {
@@ -128,6 +128,21 @@ function setAttr(el: Element, k: string, attr: any) {
   }
 }
 
+function removeAttr(el: Element, k: string) {
+  if (/^on/.test || k === "checked" || k === "value") {
+    el[k] = null;
+  } else {
+    el.removeAttribute(k);
+  }
+}
+
+function updateAttrs(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
+  for (const k in { ...oldAttrs, ...newAttrs }) {
+    oldAttrs[k] != null && newAttrs[k] == null && removeAttr(el, k);
+    newAttrs[k] != null && setAttr(el, k, newAttrs[k]);
+  }
+}
+
 function resolveComponent(fiber: Fiber) {
   const vnode = fiber.vnode;
   if (!vnode || vnode.type !== "component") return;
@@ -154,9 +169,7 @@ function commitAllHostEffects(effects: EffectList) {
         } else {
           node = document.createElement(e.vnode.name as string);
           const { attrs, children } = e.vnode.props;
-          for (const k in attrs) {
-            setAttr(node as Element, k, attrs[k]);
-          }
+          updateAttrs(node as Element, {}, attrs);
         }
         const parent = e.return.node;
         if (e.alternate) {
@@ -175,9 +188,7 @@ function commitAllHostEffects(effects: EffectList) {
           node.nodeValue = e.vnode.name as string;
         } else {
           const { attrs, children } = e.vnode.props;
-          for (const k in attrs) {
-            setAttr(node as Element, k, attrs[k]);
-          }
+          updateAttrs(node as Element, e.alternate.vnode.props.attrs, attrs);
           e.node = node;
         }
         break;

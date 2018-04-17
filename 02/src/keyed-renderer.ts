@@ -1,5 +1,11 @@
 import { VNode, Attrs, Component } from "./h";
-import { setNode, resolveComponent, setAttr, getNode } from "./common";
+import {
+  setNode,
+  resolveComponent,
+  setAttr,
+  getNode,
+  updateAttrs,
+} from "./common";
 
 export function createRenderer(container: Element) {
   const lifeCycles: Function[] = [];
@@ -18,9 +24,7 @@ export function createRenderer(container: Element) {
       case "element": {
         const node = document.createElement(vnode.name as string);
         const { attrs, children } = vnode.props;
-        for (const k in attrs) {
-          setAttr(node, k, attrs[k]);
-        }
+        updateAttrs(node, {}, attrs);
         setNode(vnode, node);
         children.forEach(child => node.appendChild(createElement(child)));
         attrs.oncreate && lifeCycles.push(() => attrs.oncreate(node));
@@ -44,10 +48,7 @@ export function createRenderer(container: Element) {
   }
 
   function updateElement(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
-    for (const k in { ...oldAttrs, ...newAttrs }) {
-      oldAttrs[k] != null && newAttrs[k] == null && el.removeAttribute(k);
-      newAttrs[k] != null && setAttr(el, k, newAttrs[k]);
-    }
+    updateAttrs(el, oldAttrs, newAttrs);
     newAttrs.onupdate && lifeCycles.push(() => newAttrs.onupdate(el));
   }
 
