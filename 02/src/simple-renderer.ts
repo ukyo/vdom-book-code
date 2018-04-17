@@ -1,33 +1,14 @@
 import { VNode, Attrs, Component } from "./h";
+import {
+  setNode,
+  resolveComponent,
+  setAttr,
+  getNode,
+  updateAttrs,
+} from "./common";
 
 export function createRenderer(container: Element) {
   const lifeCycles: Function[] = [];
-
-  const getNode = (vnode: any): Node => vnode && vnode._node;
-
-  const setNode = (vnode: any, node: Node) => (vnode._node = node);
-
-  function setAttr(el: Element, k: string, attr: any) {
-    if (/^on/.test(k) || k === "checked" || k === "value") {
-      el[k] = attr;
-    } else {
-      el.setAttribute(k, attr);
-    }
-  }
-
-  function removeAttr(el: Element, k: string) {
-    if (/^on/.test || k === "checked" || k === "value") {
-      el[k] = null;
-    } else {
-      el.removeAttribute(k);
-    }
-  }
-
-  function resolveComponent(vnode: VNode) {
-    if (!vnode || vnode.type !== "component") return;
-    const _vnode = (vnode.name as Component)(vnode.props);
-    Object.assign(vnode, _vnode);
-  }
 
   function createElement(vnode: VNode): Node {
     switch (vnode.type) {
@@ -69,10 +50,7 @@ export function createRenderer(container: Element) {
   }
 
   function updateElement(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
-    for (const k in { ...oldAttrs, ...newAttrs }) {
-      oldAttrs[k] != null && newAttrs[k] == null && el.removeAttribute(k);
-      newAttrs[k] != null && setAttr(el, k, newAttrs[k]);
-    }
+    updateAttrs(el, oldAttrs, newAttrs);
     newAttrs.onupdate && lifeCycles.push(() => newAttrs.onupdate(el));
   }
 

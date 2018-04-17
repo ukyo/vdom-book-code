@@ -37,7 +37,7 @@ function hello() {
   console.log("hello");
 }
 
-const App = () => (
+const MessageApp = () => (
   <div style="color: #999;">
     <div>
       <input type="text" onkeypress={addNewMessage} />
@@ -61,8 +61,6 @@ const App = () => (
   </div>
 );
 
-// render(<App />);
-
 const arr = [];
 for (let i = 0; i < 3000; ++i) {
   arr.push(i);
@@ -71,7 +69,7 @@ for (let i = 0; i < 3000; ++i) {
 let text = "";
 const updateText = (ev: KeyboardEvent) => {
   text = (ev.target as HTMLInputElement).value;
-  render(<HeavyComponent />);
+  render(<App />);
 };
 
 const HeavyComponent = () => (
@@ -85,6 +83,23 @@ const HeavyComponent = () => (
 );
 
 setInterval(() => {
+  if (isMessageAppEnabled) return;
   arr.push(arr.shift());
-  render(<HeavyComponent />);
+  render(<App />);
 }, 100);
+
+let isMessageAppEnabled = true;
+
+const toggleApp = () => {
+  isMessageAppEnabled = !isMessageAppEnabled;
+  render(<App />);
+};
+
+const App = () => (
+  <div>
+    <button onclick={toggleApp}>toggle app</button>
+    {isMessageAppEnabled ? <MessageApp /> : <HeavyComponent />}
+  </div>
+);
+
+render(<App />);
