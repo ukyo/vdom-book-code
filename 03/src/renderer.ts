@@ -219,8 +219,10 @@ export function createRenderer(container: Element) {
       if (!nextUnitOfWork) {
         if (prevRoot && nextRoot) {
           nextRoot.alternate = prevRoot;
+          prevRoot.alternate = nextRoot;
           nextRoot.node = prevRoot.node;
           nextRoot.child.alternate = prevRoot.child;
+          prevRoot.child.alternate = nextRoot.child;
           nextRoot.child.node = prevRoot.child.node;
         }
         nextUnitOfWork = prevRoot = nextRoot;
