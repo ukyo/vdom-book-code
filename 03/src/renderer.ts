@@ -112,12 +112,12 @@ function reconcileChildren(workInProgress: Fiber) {
   return (workInProgress.child = first);
 }
 
-function removeChilden(e: Fiber) {
-  if (e.child) removeChilden(e.child);
-  if (e.sibling) removeChilden(e.sibling);
-  e.tag === "element" &&
-    e.vnode.props.attrs.onremove &&
-    e.vnode.props.attrs.onremove(e.node);
+function removeChilden(fiber: Fiber) {
+  if (fiber.child) removeChilden(fiber.child);
+  if (fiber.sibling) removeChilden(fiber.sibling);
+  fiber.tag === "element" &&
+    fiber.vnode.props.attrs.onremove &&
+    fiber.vnode.props.attrs.onremove(fiber.node);
 }
 
 function setAttr(el: Element, k: string, attr: any) {
@@ -152,49 +152,53 @@ function resolveComponent(fiber: Fiber) {
 }
 
 function commitAllBeforeMutationLifeCycles(effects: EffectList) {
-  for (const e of effects) {
-    if (e.effectTag === FiberEffectTag.Deletion) {
-      removeChilden(e);
+  for (const fiber of effects) {
+    if (fiber.effectTag === FiberEffectTag.Deletion) {
+      removeChilden(fiber);
     }
   }
 }
 
 function commitAllHostEffects(effects: EffectList) {
-  for (const e of effects) {
-    switch (e.effectTag) {
+  for (const fiber of effects) {
+    switch (fiber.effectTag) {
       case FiberEffectTag.Placement: {
         let node: Node;
-        if (e.tag === "text") {
-          node = document.createTextNode(e.vnode.name as string);
+        if (fiber.tag === "text") {
+          node = document.createTextNode(fiber.vnode.name as string);
         } else {
-          node = document.createElement(e.vnode.name as string);
-          const { attrs, children } = e.vnode.props;
+          node = document.createElement(fiber.vnode.name as string);
+          const { attrs, children } = fiber.vnode.props;
           updateAttrs(node as Element, {}, attrs);
         }
-        const parent = e.return.node;
-        if (e.alternate) {
-          const oldNode = e.alternate.node;
+        const parent = fiber.return.node;
+        if (fiber.alternate) {
+          const oldNode = fiber.alternate.node;
           parent.insertBefore(node, oldNode);
           parent.removeChild(oldNode);
         } else {
           parent.appendChild(node);
         }
-        e.node = node;
+        fiber.node = node;
         break;
       }
       case FiberEffectTag.Update: {
-        const node = e.alternate.node as Node;
-        if (e.tag === "text") {
-          node.nodeValue = e.vnode.name as string;
+        const node = fiber.alternate.node as Node;
+        if (fiber.tag === "text") {
+          node.nodeValue = fiber.vnode.name as string;
         } else {
-          const { attrs, children } = e.vnode.props;
-          updateAttrs(node as Element, e.alternate.vnode.props.attrs, attrs);
-          e.node = node;
+          const { attrs, children } = fiber.vnode.props;
+          updateAttrs(
+            node as Element,
+            fiber.alternate.vnode.props.attrs,
+            attrs
+          );
+          fiber.node = node;
         }
         break;
       }
       case FiberEffectTag.Deletion: {
-        const node = e.node as Node;
+        const node = fiber.node as Node;
         const parent = node.parentElement;
         parent && parent.removeChild(node);
       }
