@@ -49,7 +49,7 @@ export function createRenderer(container: Element) {
 
   function updateElement(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
     updateAttrs(el, oldAttrs, newAttrs);
-    newAttrs.onupdate && lifeCycles.push(() => newAttrs.onupdate(el));
+    oldAttrs.onupdate && lifeCycles.push(() => oldAttrs.onupdate(el));
   }
 
   function getKey(vnode: VNode) {
@@ -58,9 +58,12 @@ export function createRenderer(container: Element) {
       : null;
   }
 
-  function createThenInsert(parent: Node, vnode: VNode, node?: Node) {
-    const _node = createElement(vnode);
-    node ? parent.insertBefore(_node, node) : parent.appendChild(_node);
+  function insertOrAppendNode(parent, a: Node, b?: Node) {
+    b ? parent.insertBefore(a, b) : parent.appendChild(a);
+  }
+
+  function createElementThenInsert(parent: Node, vnode: VNode, node?: Node) {
+    insertOrAppendNode(parent, createElement(vnode), node);
   }
 
   function patch(parent: Node, old: VNode, vnode: VNode) {
@@ -68,11 +71,11 @@ export function createRenderer(container: Element) {
     if (old === vnode) return;
     const node = getNode(old);
     if (!old && vnode) {
-      createThenInsert(parent, vnode);
+      createElementThenInsert(parent, vnode);
     } else if (old && !vnode) {
       removeElement(old);
     } else if (old.type !== vnode.type) {
-      createThenInsert(parent, vnode, node);
+      createElementThenInsert(parent, vnode, node);
       removeElement(old);
     } else if (old.name !== vnode.name) {
       if (old.type === "text") {
@@ -80,80 +83,81 @@ export function createRenderer(container: Element) {
         setNode(vnode, node);
         return;
       }
-      createThenInsert(parent, vnode, node);
+      createElementThenInsert(parent, vnode, node);
       removeElement(old);
     } else {
       setNode(vnode, node);
       if (old.type === "text") return;
       updateElement(node as Element, old.props.attrs, vnode.props.attrs);
 
-      const oldKeyed = {};
-      const newKeyed = {};
-      const oldChildren = old.props.children;
-      const newChildren = vnode.props.children;
+      reconcileChildren(node, old.props.children, vnode.props.children);
+    }
+  }
 
-      if (!oldChildren.length) {
-        const fragment = document.createDocumentFragment();
-        newChildren.forEach(child => createThenInsert(fragment, child));
-        node.appendChild(fragment);
-        return;
+  function reconcileChildren(
+    parent: Node,
+    oldChildren: VNode[],
+    newChildren: VNode[]
+  ) {
+    const oldKeyed = {};
+    const newKeyed = {};
+
+    oldChildren.forEach(child => {
+      const key = getKey(child);
+      if (key != null) oldKeyed[key] = child;
+    });
+
+    let i = 0;
+    let j = 0;
+
+    while (j < newChildren.length) {
+      const oldKey = getKey(oldChildren[i]);
+      const newKey = getKey(newChildren[j]);
+
+      if (newKeyed[oldKey]) {
+        i++;
+        continue;
       }
 
-      if (!newChildren.length) {
-        oldChildren.forEach(removeChildren);
-        (node as Element).innerHTML = "";
-        return;
-      }
-
-      oldChildren.forEach(child => {
-        const key = getKey(child);
-        if (key != null) oldKeyed[key] = child;
-      });
-
-      let i = 0;
-      let j = 0;
-
-      while (j < newChildren.length) {
-        const oldKey = getKey(oldChildren[i]);
-        const newKey = getKey(newChildren[j]);
-
-        if (newKeyed[oldKey]) {
-          i++;
-          continue;
-        }
-
-        if (newKey == null) {
-          if (oldKey == null) {
-            patch(node, oldChildren[i], newChildren[j]);
-            j++;
-          }
-          i++;
-        } else {
-          const keyedNode = oldKeyed[newKey];
-
-          if (oldKey === newKey) {
-            patch(node, keyedNode, newChildren[j]);
-            i++;
-          } else if (keyedNode) {
-            node.insertBefore(getNode(keyedNode), getNode(oldChildren[i]));
-            patch(node, keyedNode, newChildren[j]);
-          } else {
-            createThenInsert(node, newChildren[j], getNode(oldChildren[i]));
-          }
-
-          newKeyed[newKey] = newChildren[j];
+      if (newKey == null) {
+        if (oldKey == null) {
+          patch(parent, oldChildren[i], newChildren[j]);
           j++;
         }
-      }
-
-      while (i < oldChildren.length) {
-        getKey(oldChildren[i]) == null && removeElement(oldChildren[i]);
         i++;
-      }
+      } else {
+        const keyedNode = oldKeyed[newKey];
 
-      for (const k in oldKeyed) {
-        !newKeyed[k] && removeElement(oldKeyed[k]);
+        if (oldKey === newKey) {
+          patch(parent, keyedNode, newChildren[j]);
+          i++;
+        } else if (keyedNode) {
+          insertOrAppendNode(
+            parent,
+            getNode(keyedNode),
+            getNode(oldChildren[i])
+          );
+          patch(parent, keyedNode, newChildren[j]);
+        } else {
+          createElementThenInsert(
+            parent,
+            newChildren[j],
+            getNode(oldChildren[i])
+          );
+        }
+
+        newKeyed[newKey] = newChildren[j];
+        j++;
       }
+    }
+
+    while (i < oldChildren.length) {
+      getKey(oldChildren[i]) == null && removeElement(oldChildren[i]);
+      i++;
+    }
+
+    for (const k in oldKeyed) {
+      !newKeyed[k] && removeElement(oldKeyed[k]);
     }
   }
 

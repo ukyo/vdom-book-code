@@ -62,7 +62,7 @@ function createRootFiber(vnode: VNode, container: Element) {
   return rootFiber;
 }
 
-function reconcileNode(workInProgress: Fiber) {
+function patch(workInProgress: Fiber) {
   const current = workInProgress.alternate;
   if (!current) {
     workInProgress.effectTag = FiberEffectTag.Placement;
@@ -203,14 +203,19 @@ function commitAllHostEffects(effects: EffectList) {
 }
 
 function commitAllLifeCycles(effects: EffectList) {
-  for (const e of effects) {
-    if (e.tag !== "element") return;
-    switch (e.effectTag) {
+  for (const fiber of effects) {
+    if (fiber.tag !== "element") return;
+    switch (fiber.effectTag) {
       case FiberEffectTag.Placement: {
-        e.vnode.props.attrs.oncreate && e.vnode.props.attrs.oncreate(e.node);
+        fiber.vnode.props.attrs.oncreate &&
+          fiber.vnode.props.attrs.oncreate(fiber.node);
+        break;
       }
       case FiberEffectTag.Update: {
-        e.vnode.props.attrs.onupdate && e.vnode.props.attrs.onupdate(e.node);
+        const current = fiber.alternate;
+        current.vnode.props.attrs.onupdate &&
+          current.vnode.props.attrs.onupdate(fiber.node);
+        break;
       }
     }
   }
@@ -271,7 +276,7 @@ export function createRenderer(container: Element) {
       return workInProgress.child;
     }
     resolveComponent(workInProgress);
-    return reconcileNode(workInProgress);
+    return patch(workInProgress);
   }
 
   function completeUnitOfWork(workInProgress: Fiber): Fiber | null {

@@ -49,10 +49,10 @@ export function createRenderer(container: Element) {
 
   function updateElement(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
     updateAttrs(el, oldAttrs, newAttrs);
-    newAttrs.onupdate && lifeCycles.push(() => newAttrs.onupdate(el));
+    oldAttrs.onupdate && lifeCycles.push(() => oldAttrs.onupdate(el));
   }
 
-  function createThenInsert(parent: Node, vnode: VNode, node?: Node) {
+  function createElementThenInsert(parent: Node, vnode: VNode, node?: Node) {
     const _node = createElement(vnode);
     node ? parent.insertBefore(_node, node) : parent.appendChild(_node);
   }
@@ -62,11 +62,11 @@ export function createRenderer(container: Element) {
     if (old === vnode) return;
     const node = getNode(old);
     if (!old && vnode) {
-      createThenInsert(parent, vnode);
+      createElementThenInsert(parent, vnode);
     } else if (old && !vnode) {
       removeElement(old);
     } else if (old.type !== vnode.type) {
-      createThenInsert(parent, vnode, node);
+      createElementThenInsert(parent, vnode, node);
       removeElement(old);
     } else if (old.name !== vnode.name) {
       if (old.type === "text") {
@@ -74,26 +74,29 @@ export function createRenderer(container: Element) {
         setNode(vnode, node);
         return;
       }
-      createThenInsert(parent, vnode, node);
+      createElementThenInsert(parent, vnode, node);
       removeElement(old);
     } else {
       setNode(vnode, node);
       if (old.type === "text") return;
       updateElement(node as Element, old.props.attrs, vnode.props.attrs);
+      reconcileChildren(node, old.props.children, vnode.props.children);
+    }
+  }
 
-      const oldChildren = old.props.children;
-      const newChildren = vnode.props.children;
-      let i = 0;
-
-      while (i < newChildren.length) {
-        patch(node, oldChildren[i], newChildren[i]);
-        i++;
-      }
-
-      while (i < oldChildren.length) {
-        removeElement(oldChildren[i]);
-        i++;
-      }
+  function reconcileChildren(
+    parent: Node,
+    oldChildren: VNode[],
+    newChildren: VNode[]
+  ) {
+    let i = 0;
+    while (i < newChildren.length) {
+      patch(parent, oldChildren[i], newChildren[i]);
+      i++;
+    }
+    while (i < oldChildren.length) {
+      removeElement(oldChildren[i]);
+      i++;
     }
   }
 
