@@ -1,4 +1,4 @@
-import { VNode, Component, VNodeType, Attrs } from "./h";
+import { VNode, Component, VNodeType, Attrs, Props } from "./h";
 import { LinkedList } from "./linkedlist";
 
 enum FiberEffectTag {
@@ -13,7 +13,8 @@ type EffectList = LinkedList<Fiber>;
 
 interface Fiber {
   tag: FiberTag;
-  vnode: VNode;
+  name: string | Component;
+  props?: Props;
   node?: Node;
   return?: Fiber;
   child?: Fiber;
@@ -25,7 +26,8 @@ interface Fiber {
 
 function createFiber(vnode: VNode): Fiber {
   return {
-    vnode,
+    name: vnode ? vnode.name : null,
+    props: vnode ? vnode.props : null,
     tag: vnode ? vnode.type : "root",
     node: null,
     return: null,
@@ -40,7 +42,8 @@ function createFiber(vnode: VNode): Fiber {
 function cloneFiber(current: Fiber, vnode: VNode) {
   if (!current) return createFiber(vnode);
   const fiber = {
-    vnode,
+    name: vnode.name,
+    props: vnode.props,
     tag: vnode ? vnode.type : ("root" as FiberTag),
     alternate: current,
     node: current.node,
@@ -70,12 +73,9 @@ function patch(workInProgress: Fiber) {
     if (current.tag !== workInProgress.tag) {
       workInProgress.effectTag = FiberEffectTag.Placement;
     } else {
-      if (
-        current.tag === "text" &&
-        current.vnode.name !== workInProgress.vnode.name
-      ) {
+      if (current.tag === "text" && current.name !== workInProgress.name) {
         workInProgress.effectTag = FiberEffectTag.Update;
-      } else if (current.vnode.name !== workInProgress.vnode.name) {
+      } else if (current.name !== workInProgress.name) {
         workInProgress.effectTag = FiberEffectTag.Placement;
       } else {
         workInProgress.effectTag = FiberEffectTag.Update;
@@ -92,7 +92,7 @@ function reconcileChildren(workInProgress: Fiber) {
   let first: Fiber;
   let prevFiber: Fiber;
   let oldFiber: Fiber = current && current.child;
-  const children = workInProgress.vnode.props.children;
+  const children = workInProgress.props.children;
   children.forEach(child => {
     const f = cloneFiber(oldFiber, child);
     f.return = workInProgress;
@@ -116,8 +116,8 @@ function removeChilden(fiber: Fiber) {
   if (fiber.child) removeChilden(fiber.child);
   if (fiber.sibling) removeChilden(fiber.sibling);
   fiber.tag === "element" &&
-    fiber.vnode.props.attrs.onremove &&
-    fiber.vnode.props.attrs.onremove(fiber.node);
+    fiber.props.attrs.onremove &&
+    fiber.props.attrs.onremove(fiber.node);
 }
 
 function setAttr(el: Element, k: string, attr: any) {
@@ -144,10 +144,9 @@ function updateAttrs(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
 }
 
 function resolveComponent(fiber: Fiber) {
-  const vnode = fiber.vnode;
-  if (!vnode || vnode.type !== "component") return;
-  const _vnode = (vnode.name as Component)(vnode.props);
-  Object.assign(vnode, _vnode);
+  if (fiber.tag !== "component") return;
+  const vnode = (fiber.name as Component)(fiber.props);
+  Object.assign(fiber, vnode);
   fiber.tag = vnode.type;
 }
 
@@ -165,10 +164,10 @@ function commitAllHostEffects(effects: EffectList) {
       case FiberEffectTag.Placement: {
         let node: Node;
         if (fiber.tag === "text") {
-          node = document.createTextNode(fiber.vnode.name as string);
+          node = document.createTextNode(fiber.name as string);
         } else {
-          node = document.createElement(fiber.vnode.name as string);
-          const { attrs, children } = fiber.vnode.props;
+          node = document.createElement(fiber.name as string);
+          const { attrs, children } = fiber.props;
           updateAttrs(node as Element, {}, attrs);
         }
         const parent = fiber.return.node;
@@ -185,14 +184,10 @@ function commitAllHostEffects(effects: EffectList) {
       case FiberEffectTag.Update: {
         const node = fiber.alternate.node as Node;
         if (fiber.tag === "text") {
-          node.nodeValue = fiber.vnode.name as string;
+          node.nodeValue = fiber.name as string;
         } else {
-          const { attrs, children } = fiber.vnode.props;
-          updateAttrs(
-            node as Element,
-            fiber.alternate.vnode.props.attrs,
-            attrs
-          );
+          const { attrs, children } = fiber.props;
+          updateAttrs(node as Element, fiber.alternate.props.attrs, attrs);
           fiber.node = node;
         }
         break;
@@ -211,14 +206,13 @@ function commitAllLifeCycles(effects: EffectList) {
     if (fiber.tag !== "element") return;
     switch (fiber.effectTag) {
       case FiberEffectTag.Placement: {
-        fiber.vnode.props.attrs.oncreate &&
-          fiber.vnode.props.attrs.oncreate(fiber.node);
+        fiber.props.attrs.oncreate && fiber.props.attrs.oncreate(fiber.node);
         break;
       }
       case FiberEffectTag.Update: {
         const current = fiber.alternate;
-        current.vnode.props.attrs.onupdate &&
-          current.vnode.props.attrs.onupdate(fiber.node);
+        current.props.attrs.onupdate &&
+          current.props.attrs.onupdate(fiber.node);
         break;
       }
     }
