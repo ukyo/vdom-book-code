@@ -1,6 +1,6 @@
-# Fiber の章で使用しているコード
+# Fiber Reconciler の章で使用しているコード
 
-Fiber の章で使用しているコード。
+Fiber Reconciler の章で使用しているコード。
 
 ## インストール
 
