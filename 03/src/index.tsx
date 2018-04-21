@@ -1,11 +1,10 @@
-import { h } from "./h";
+import { h, Props, Attrs } from "./h";
 import { createRenderer } from "./renderer";
+const render = createRenderer(document.getElementById("container"));
 
 let messages = [];
 let id = 0;
 let enabled = true;
-
-const render = createRenderer(document.getElementById("container"));
 
 function addNewMessage(ev: KeyboardEvent) {
   const el = ev.target as HTMLInputElement;
@@ -72,13 +71,19 @@ const updateText = (ev: KeyboardEvent) => {
   render(<App />);
 };
 
+const Item = (attrs: Attrs, children: any) => (
+  <div>
+    <div>{attrs.v}</div>
+  </div>
+);
+
 const HeavyComponent = () => (
   <div>
     <div>
       <input oninput={updateText} />
       {text}
     </div>
-    {arr.map(i => <div>{i}</div>)}
+    {arr.map(i => <Item v={i} />)}
   </div>
 );
 
