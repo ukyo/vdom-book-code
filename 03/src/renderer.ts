@@ -82,11 +82,15 @@ export function createRenderer(container: Element) {
     } else {
       if (current.type !== workInProgress.type) {
         workInProgress.effectTag = FiberEffectTag.Placement;
+        current.effectTag = FiberEffectTag.Deletion;
+        workInProgress.effects.push(current);
       } else {
         if (current.type === "text" && current.name !== workInProgress.name) {
           workInProgress.effectTag = FiberEffectTag.Update;
         } else if (current.name !== workInProgress.name) {
           workInProgress.effectTag = FiberEffectTag.Placement;
+          current.effectTag = FiberEffectTag.Deletion;
+          workInProgress.effects.push(current);
         } else {
           workInProgress.effectTag = FiberEffectTag.Update;
         }
@@ -182,7 +186,6 @@ export function createRenderer(container: Element) {
           if (fiber.alternate) {
             const oldNode = fiber.alternate.node;
             parent.insertBefore(node, oldNode);
-            parent.removeChild(oldNode);
           } else {
             parent.appendChild(node);
           }
