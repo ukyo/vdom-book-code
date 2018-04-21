@@ -13,7 +13,7 @@ export interface VNode {
   props: Props;
 }
 
-export type Component = (props: Props) => VNode;
+export type Component = (attrs: Attrs, children: any) => VNode;
 
 function normalize(children: any[]): VNode[] {
   const arr = [];
@@ -30,11 +30,7 @@ function normalize(children: any[]): VNode[] {
   return arr;
 }
 
-export function h(
-  name: string | Component,
-  attrs: Attrs,
-  ...children: any[]
-): VNode {
+export function h(name: string | Component, attrs: Attrs, ...children: any[]): VNode {
   const props = { attrs: attrs || {}, children: normalize(children) };
   return {
     type: typeof name === "function" ? "component" : "element",

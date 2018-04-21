@@ -157,7 +157,7 @@ export function createRenderer(container: Element) {
 
   function resolveComponent(fiber: Fiber) {
     if (fiber.type !== "component") return;
-    const vnode = (fiber.name as Component)(fiber.props);
+    const vnode = (fiber.name as Component)(fiber.props.attrs, fiber.props.children);
     Object.assign(fiber, vnode);
     fiber.type = vnode.type;
   }

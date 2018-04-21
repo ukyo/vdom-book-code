@@ -29,6 +29,6 @@ export function updateAttrs(el: Element, oldAttrs: Attrs, newAttrs: Attrs) {
 
 export function resolveComponent(vnode: VNode) {
   if (!vnode || vnode.type !== "component") return;
-  const _vnode = (vnode.name as Component)(vnode.props);
+  const _vnode = (vnode.name as Component)(vnode.props.attrs, vnode.props.children);
   Object.assign(vnode, _vnode);
 }
